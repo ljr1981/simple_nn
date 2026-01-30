@@ -19,6 +19,7 @@ feature {NONE} -- Initialization
 			failed := 0
 
 			run_xor_test
+			run_diagnostic_tests
 
 			print ("%N========================%N")
 			print ("Results: " + passed.out + " passed, " + failed.out + " failed%N")
@@ -39,6 +40,21 @@ feature {NONE} -- Test Runners
 			print ("XOR Problem Tests:%N")
 			create l_tests
 			run_test (agent l_tests.test_xor_learning, "test_xor_learning")
+			run_test (agent l_tests.test_xor_learning_with_batches, "test_xor_learning_with_batches")
+			print ("%N")
+		end
+
+	run_diagnostic_tests
+		local
+			l_tests: TEST_DIAGNOSTIC
+		do
+			print ("Diagnostic Tests:%N")
+			create l_tests
+			l_tests.test_single_neuron_learning
+			print ("%N")
+			l_tests.test_weight_updates
+			print ("%N")
+			l_tests.test_loss_computation
 			print ("%N")
 		end
 

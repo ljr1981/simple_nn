@@ -52,17 +52,41 @@ feature -- Training
 	fit (a_x_train: ARRAY [ARRAY [REAL_64]];
 		 a_y_train: ARRAY [ARRAY [REAL_64]];
 		 a_epochs: INTEGER): TRAINING_RESULT
-			-- Train network using gradient descent.
+			-- Train network using stochastic gradient descent (sample-by-sample).
 		require
 			data_not_empty: a_x_train.count > 0
 			same_count: a_x_train.count = a_y_train.count
 			positive_epochs: a_epochs > 0
+		do
+			Result := fit_with_batch_size (a_x_train, a_y_train, a_epochs, 1)
+		ensure
+			result_not_void: Result /= Void
+		end
+
+	fit_with_batch_size (a_x_train: ARRAY [ARRAY [REAL_64]];
+						 a_y_train: ARRAY [ARRAY [REAL_64]];
+						 a_epochs: INTEGER;
+						 a_batch_size: INTEGER): TRAINING_RESULT
+			-- Train network using mini-batch gradient descent.
+			-- a_batch_size = 1: Stochastic gradient descent (SGD)
+			-- a_batch_size = dataset_size: Batch gradient descent
+			-- a_batch_size > 1: Mini-batch gradient descent
+		require
+			data_not_empty: a_x_train.count > 0
+			same_count: a_x_train.count = a_y_train.count
+			positive_epochs: a_epochs > 0
+			positive_batch_size: a_batch_size > 0
 		local
 			l_epoch: INTEGER
 			l_sample: INTEGER
+			l_batch_start: INTEGER
+			l_batch_end: INTEGER
+			l_batch_sample: INTEGER
 			l_output: ARRAY [REAL_64]
 			l_error: ARRAY [REAL_64]
 			l_loss: REAL_64
+			l_batch_loss: REAL_64
+			l_batch_count: INTEGER
 		do
 			create {TRAINING_RESULT} Result.make
 
@@ -70,29 +94,48 @@ feature -- Training
 			until l_epoch > a_epochs
 			loop
 				l_loss := 0.0
+				l_batch_count := 0
 
-				-- Train on each sample
+				-- Process batches
 				from l_sample := 1
 				until l_sample > a_x_train.count
 				loop
-					-- Forward pass
-					l_output := forward_pass (a_x_train [l_sample])
+					-- Define batch boundaries
+					l_batch_start := l_sample
+					l_batch_end := (l_sample + a_batch_size - 1).min (a_x_train.count)
+					l_batch_loss := 0.0
 
-					-- Compute loss (MSE)
-					l_error := compute_error (l_output, a_y_train [l_sample])
-					l_loss := l_loss + mean_squared_error (l_error)
+					-- Accumulate gradients for batch
+					from l_batch_sample := l_batch_start
+					until l_batch_sample > l_batch_end
+					loop
+						-- Forward pass
+						l_output := forward_pass (a_x_train [l_batch_sample])
 
-					-- Backward pass
-					backward_pass (l_error)
+						-- Compute loss (MSE)
+						l_error := compute_error (l_output, a_y_train [l_batch_sample])
+						l_batch_loss := l_batch_loss + mean_squared_error (l_error)
 
-					-- Update weights
+						-- Backward pass
+						backward_pass (l_error)
+
+						l_batch_sample := l_batch_sample + 1
+					end
+
+					-- Update weights once per batch
 					update_weights
 
-					l_sample := l_sample + 1
+					-- Average batch loss
+					l_batch_loss := l_batch_loss / (l_batch_end - l_batch_start + 1)
+					l_loss := l_loss + l_batch_loss
+					l_batch_count := l_batch_count + 1
+
+					-- Move to next batch
+					l_sample := l_batch_end + 1
 				end
 
 				-- Record epoch loss
-				l_loss := l_loss / a_x_train.count
+				l_loss := l_loss / l_batch_count
 				loss_history.extend (l_loss)
 				Result.add_epoch (l_epoch, l_loss)
 
