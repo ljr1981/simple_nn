@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<system name="simple_nn" uuid="5F2DB1A0-88D6-4C1B-A9C5-88D12A891235" library_target="simple_nn">
+	<target name="simple_nn">
+		<root class="SIMPLE_NN" feature="make"/>
+		<setting name="total_order_on_reals" value="true"/>
+		<capability>
+			<concurrency support="scoop"/>
+			<void_safety support="all"/>
+		</capability>
+
+		<!-- ISE Standard Libraries (allowed) -->
+		<library name="base" location="$ISE_LIBRARY\library\base\base.ecf"/>
+		<library name="testing" location="$ISE_LIBRARY\library\testing\testing.ecf"/>
+
+		<!-- Simple Eiffel Ecosystem (preferred) -->
+		<library name="simple_math" location="d:\prod\simple_math\simple_math.ecf"/>
+		<library name="simple_linalg" location="d:\prod\simple_linalg\simple_linalg.ecf"/>
+		<library name="simple_ml" location="d:\prod\simple_ml\simple_ml.ecf"/>
+
+		<!-- Local source -->
+		<cluster name="src" location=".\src\" recursive="true"/>
+	</target>
+
+	<target name="simple_nn_tests" extends="simple_nn">
+		<root class="TEST_APP" feature="make"/>
+		<cluster name="tests" location=".\test\" recursive="true"/>
+	</target>
+</system>

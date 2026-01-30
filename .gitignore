@@ -1,0 +1,40 @@
+# Eiffel compilation artifacts
+EIFGENs/
+*.exe
+*.lib
+*.obj
+*.res
+
+# Generated C code
+F_code/
+W_code/
+*.c
+*.h
+
+# IDE
+.eiffel-workflow/
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.bak
+*.tmp
+*.swp
+*~
+
+# Build artifacts
+bin/
+build/
+dist/
+
+# Logs
+*.log
+
+# Archives
+*.zip
+*.tar
+*.tar.gz
