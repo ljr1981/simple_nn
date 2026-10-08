@@ -7,7 +7,9 @@ Production-ready neural network library with real backpropagation for the Eiffel
 - **Real Backpropagation**: Proper gradient computation via chain rule
 - **Layer Abstraction**: Extensible design for custom layer types
 - **Multiple Activations**: Sigmoid, ReLU, tanh with derivatives
-- **Weight Initialization**: Xavier initialization for stable training
+- **Weight Initialization**: Glorot (Xavier) uniform, a fresh seed for each layer, and `make_seeded` for reproducible runs
+- **Verified Gradients**: a numerical gradient check in the test suite
+- **Mini-batch Training**: `fit_with_batch_size` averages gradients over each batch
 - **Training Utilities**: Loss tracking, configurable learning rates
 - **Pure Eiffel**: No external dependencies (uses simple_math, simple_linalg)
 
@@ -16,16 +18,16 @@ Production-ready neural network library with real backpropagation for the Eiffel
 ```eiffel
 -- Create network
 create network.make
-network.add_layer (create {DENSE_LAYER}.make (2, 4))
-network.add_layer (create {ACTIVATION_LAYER}.make_sigmoid (4))
-network.add_layer (create {DENSE_LAYER}.make (4, 1))
+network.add_layer (create {DENSE_LAYER}.make_seeded (2, 8, 404))  -- or make (2, 8)
+network.add_layer (create {ACTIVATION_LAYER}.make_sigmoid (8))
+network.add_layer (create {DENSE_LAYER}.make_seeded (8, 1, 505))
 network.add_layer (create {ACTIVATION_LAYER}.make_sigmoid (1))
 network.compile (0.5)  -- learning_rate = 0.5
 
 -- Train on XOR problem
 x_train := <<0.0, 0.0>>, <<0.0, 1.0>>, <<1.0, 0.0>>, <<1.0, 1.0>>
 y_train := <<0.0>>, <<1.0>>, <<1.0>>, <<0.0>>
-result := network.fit (x_train, y_train, 1000)
+result := network.fit (x_train, y_train, 5000)
 
 -- Predict
 output := network.predict (<<0.0, 1.0>>)
@@ -50,8 +52,8 @@ Input → Dense(2→4) → Sigmoid → Dense(4→1) → Sigmoid → Output
 
 Each layer supports:
 - `forward(input)`: Compute outputs
-- `backward(gradient)`: Compute input gradients
-- `update_weights(learning_rate)`: Gradient descent
+- `backward(gradient)`: Add this sample's gradients to the accumulators; return the input gradient
+- `update_weights(learning_rate)`: Gradient descent step, then clear the gradients
 
 ## Dependencies
 
@@ -63,7 +65,7 @@ Each layer supports:
 
 ```bash
 cd simple_nn
-ec.sh -batch -config simple_nn.ecf -target simple_nn_tests -finalize
+/d/prod/ec.sh test -config simple_nn.ecf -target simple_nn_tests
 ```
 
 ## Testing
@@ -72,10 +74,11 @@ ec.sh -batch -config simple_nn.ecf -target simple_nn_tests -finalize
 ./EIFGENs/simple_nn_tests/F_code/simple_nn.exe
 ```
 
-**Test Results**: ✅ 1/1 test passed
-- XOR problem learning verification
-- Network trains and loss decreases
-- Framework operational
+**Test Results** (0.1.1, full contracts on): 7/7 passed
+- XOR, seeded 2-8-4-1 with SGD: every prediction within 0.2 of its target, final loss < 0.01 (0.0003)
+- XOR, seeded 2-8-1 with a full batch: the same criteria (0.0006)
+- Numerical gradient check: all 26 parameters of a 3-4-2 tanh/sigmoid net match central differences (max relative error 3e-9)
+- Batch gradient accumulation, AND gate, weight updates, loss computation
 
 ## API Reference
 
@@ -88,22 +91,35 @@ compile (learning_rate: REAL_64)
 
 -- Training
 fit (x_train, y_train: ARRAY; epochs: INTEGER): TRAINING_RESULT
+fit_with_batch_size (x_train, y_train: ARRAY; epochs, batch_size: INTEGER): TRAINING_RESULT
+
+-- Gradients
+loss (input, target: ARRAY): REAL_64            -- MSE for one sample
+compute_gradients (input, target: ARRAY)        -- fill each dense layer's gradients
 
 -- Prediction
 predict (input: ARRAY): ARRAY
 
 -- Queries
-layer_count: INTEGER
+input_size, output_size, layer_count: INTEGER
+learning_rate: REAL_64
+is_compiled: BOOLEAN
 get_layer (index: INTEGER): LAYER
 ```
 
 ### DENSE_LAYER
 
 ```eiffel
-make (input_size, output_size: INTEGER)
+make (input_size, output_size: INTEGER)              -- Glorot uniform, a fresh seed
+make_seeded (input_size, output_size, seed: INTEGER) -- reproducible weights (seed > 0)
+weight (row, column), bias_value (row): REAL_64
+weight_gradient (row, column), bias_gradient (row): REAL_64
+accumulated_samples: INTEGER
+set_weight (row, column, value), set_bias (row, value)
 forward (input: ARRAY): ARRAY
 backward (gradient: ARRAY): ARRAY
 update_weights (learning_rate: REAL_64)
+clear_gradients
 ```
 
 ### ACTIVATION_LAYER
@@ -120,6 +136,8 @@ make_tanh (size: INTEGER)
 
 Forward pass computes: `output = activation(weights @ input + bias)`
 
+Loss is mean squared error, `L = (1/n) Σ (output - target)²`, so backprop starts from `∂L/∂output = 2 (output - target) / n`.
+
 Backward pass computes:
 1. Input gradient: `∂L/∂input = weights^T @ ∂L/∂output`
 2. Weight gradient: `∂L/∂weights = ∂L/∂output @ input^T`
@@ -127,7 +145,11 @@ Backward pass computes:
 
 ### Weight Updates
 
-Stochastic gradient descent: `w := w - learning_rate * gradient`
+Gradient descent: `w := w - learning_rate * gradient`. `fit` updates after every sample (SGD). `fit_with_batch_size` sums each batch's gradients and applies them once, with rate `learning_rate / batch_length` (the batch mean).
+
+### Initialization
+
+Glorot (Xavier) uniform: `w ~ U(-limit, limit)` with `limit = sqrt (6 / (fan_in + fan_out))`, biases 0. Each layer built with `make` takes its own seed. Use `make_seeded` for reproducible runs.
 
 ### Activation Functions
 
@@ -143,7 +165,7 @@ Stochastic gradient descent: `w := w - learning_rate * gradient`
 
 ## Future Enhancements
 
-- [ ] Batch processing
+- [x] Batch processing (mini-batch gradient descent)
 - [ ] Convolutional layers
 - [ ] Recurrent layers (LSTM, GRU)
 - [ ] Batch normalization
