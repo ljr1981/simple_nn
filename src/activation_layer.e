@@ -70,6 +70,14 @@ feature -- Dimensions
 			Result := size
 		end
 
+feature -- Status report
+
+	has_cached_input: BOOLEAN
+			-- <Precursor>
+		do
+			Result := last_input.count = size
+		end
+
 feature -- Forward/Backward
 
 	forward (a_input: ARRAY [REAL_64]): ARRAY [REAL_64]
@@ -77,7 +85,8 @@ feature -- Forward/Backward
 		local
 			l_i: INTEGER
 		do
-			last_input := a_input
+				-- Own copy: a caller reusing its array must not change what `backward' sees.
+			last_input := a_input.twin
 			create Result.make_filled (0.0, 1, size)
 
 			from l_i := 1 until l_i > size loop
@@ -94,7 +103,8 @@ feature -- Forward/Backward
 		end
 
 	backward (a_output_gradient: ARRAY [REAL_64]): ARRAY [REAL_64]
-			-- Compute gradient of activation function and multiply by output gradient.
+			-- Multiply the output gradient by the activation's derivative,
+			-- evaluated at the pre-activation input of the last `forward'.
 		local
 			l_i: INTEGER
 			l_derivative: REAL_64
@@ -125,6 +135,11 @@ feature -- Weights
 			-- Activation functions have no learnable parameters
 		end
 
+	clear_gradients
+			-- No gradients are accumulated by an activation layer.
+		do
+		end
+
 feature {NONE} -- Implementation
 
 	size: INTEGER
@@ -134,7 +149,7 @@ feature {NONE} -- Implementation
 			-- Type of activation function.
 
 	last_input: ARRAY [REAL_64]
-			-- Input from most recent forward pass (for backward).
+			-- Copy of the pre-activation input from the most recent forward pass (for backward).
 
 	activation_functions: ACTIVATION_FUNCTIONS
 			-- Activation function implementations.

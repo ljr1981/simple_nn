@@ -6,6 +6,9 @@ note
 
 class TEST_DIAGNOSTIC
 
+inherit
+	NN_TEST_SUPPORT
+
 feature -- Tests
 
 	test_single_neuron_learning
@@ -47,8 +50,11 @@ feature -- Tests
 			print ("  Predictions:%N")
 			l_output := l_network.predict (<<0.0, 0.0>>)
 			print ("    AND(0,0) = " + l_output [1].out + " (expected 0.0)%N")
+			assert ("AND(0,0) below 0.2", l_output [1] < 0.2)
 			l_output := l_network.predict (<<1.0, 1.0>>)
 			print ("    AND(1,1) = " + l_output [1].out + " (expected 1.0)%N")
+			assert ("AND(1,1) above 0.8", l_output [1] > 0.8)
+			assert ("AND final loss below 0.01", l_result.final_loss < 0.01)
 		end
 
 	test_weight_updates
@@ -90,6 +96,7 @@ feature -- Tests
 			else
 				print ("  OK: Loss decreased (weights are updating)%N")
 			end
+			assert ("loss decreased", l_result.final_loss < l_result.initial_loss)
 		end
 
 	test_loss_computation

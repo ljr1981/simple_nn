@@ -22,10 +22,18 @@ feature -- Dimensions
 			positive: Result > 0
 		end
 
+feature -- Status report
+
+	has_cached_input: BOOLEAN
+			-- Has `forward' run, so that `backward' has an input to differentiate at?
+		deferred
+		end
+
 feature -- Forward/Backward Propagation
 
 	forward (a_input: ARRAY [REAL_64]): ARRAY [REAL_64]
 			-- Compute forward pass through layer.
+			-- The layer keeps its own copy of `a_input' for `backward'.
 		require
 			input_not_void: a_input /= Void
 			correct_size: a_input.count = input_size
@@ -33,14 +41,16 @@ feature -- Forward/Backward Propagation
 		ensure
 			result_not_void: Result /= Void
 			correct_output_size: Result.count = output_size
+			input_cached: has_cached_input
 		end
 
 	backward (a_output_gradient: ARRAY [REAL_64]): ARRAY [REAL_64]
-			-- Compute backward pass through layer.
+			-- Compute backward pass through layer, at the input of the last `forward'.
 			-- Returns gradient with respect to input.
 		require
 			gradient_not_void: a_output_gradient /= Void
 			correct_size: a_output_gradient.count = output_size
+			forward_done: has_cached_input
 		deferred
 		ensure
 			result_not_void: Result /= Void
@@ -55,10 +65,15 @@ feature -- Weight Management
 		end
 
 	update_weights (a_learning_rate: REAL_64)
-			-- Update layer weights using accumulated gradients.
+			-- Update layer weights using accumulated gradients, then clear them.
 		require
 			has_weights: has_weights
 			positive_rate: a_learning_rate > 0.0
+		deferred
+		end
+
+	clear_gradients
+			-- Discard any accumulated gradients.
 		deferred
 		end
 

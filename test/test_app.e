@@ -19,6 +19,7 @@ feature {NONE} -- Initialization
 			failed := 0
 
 			run_xor_test
+			run_gradient_tests
 			run_diagnostic_tests
 
 			print ("%N========================%N")
@@ -50,11 +51,20 @@ feature {NONE} -- Test Runners
 		do
 			print ("Diagnostic Tests:%N")
 			create l_tests
-			l_tests.test_single_neuron_learning
+			run_test (agent l_tests.test_single_neuron_learning, "test_single_neuron_learning")
+			run_test (agent l_tests.test_weight_updates, "test_weight_updates")
+			run_test (agent l_tests.test_loss_computation, "test_loss_computation")
 			print ("%N")
-			l_tests.test_weight_updates
-			print ("%N")
-			l_tests.test_loss_computation
+		end
+
+	run_gradient_tests
+		local
+			l_tests: TEST_GRADIENT_CHECK
+		do
+			print ("Gradient Tests:%N")
+			create l_tests
+			run_test (agent l_tests.test_gradient_check, "test_gradient_check")
+			run_test (agent l_tests.test_batch_gradients_accumulate, "test_batch_gradients_accumulate")
 			print ("%N")
 		end
 
