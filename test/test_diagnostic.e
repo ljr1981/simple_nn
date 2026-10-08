@@ -26,13 +26,13 @@ feature -- Tests
 			l_network.compile (1.0)  -- Try larger learning rate
 
 			-- AND training data (linearly separable)
-			create l_x_train.make (1, 4)
+			create l_x_train.make_filled (create {ARRAY [REAL_64]}.make_empty, 1, 4)
 			l_x_train [1] := <<0.0, 0.0>>
 			l_x_train [2] := <<0.0, 1.0>>
 			l_x_train [3] := <<1.0, 0.0>>
 			l_x_train [4] := <<1.0, 1.0>>
 
-			create l_y_train.make (1, 4)
+			create l_y_train.make_filled (create {ARRAY [REAL_64]}.make_empty, 1, 4)
 			l_y_train [1] := <<0.0>>  -- 0 AND 0 = 0
 			l_y_train [2] := <<0.0>>  -- 0 AND 1 = 0
 			l_y_train [3] := <<0.0>>  -- 1 AND 0 = 0
@@ -70,11 +70,11 @@ feature -- Tests
 			l_network.compile (5.0)  -- Very large learning rate to check updates
 
 			-- Simple data
-			create l_x_train.make (1, 2)
+			create l_x_train.make_filled (create {ARRAY [REAL_64]}.make_empty, 1, 2)
 			l_x_train [1] := <<0.0, 0.0>>
 			l_x_train [2] := <<1.0, 1.0>>
 
-			create l_y_train.make (1, 2)
+			create l_y_train.make_filled (create {ARRAY [REAL_64]}.make_empty, 1, 2)
 			l_y_train [1] := <<0.0>>
 			l_y_train [2] := <<1.0>>
 

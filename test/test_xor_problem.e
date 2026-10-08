@@ -31,13 +31,13 @@ feature -- Tests
 			l_network.compile (0.1)  -- Reduced learning rate for stability
 
 			-- XOR training data
-			create l_x_train.make (1, 4)
+			create l_x_train.make_filled (create {ARRAY [REAL_64]}.make_empty, 1, 4)
 			l_x_train [1] := <<0.0, 0.0>>
 			l_x_train [2] := <<0.0, 1.0>>
 			l_x_train [3] := <<1.0, 0.0>>
 			l_x_train [4] := <<1.0, 1.0>>
 
-			create l_y_train.make (1, 4)
+			create l_y_train.make_filled (create {ARRAY [REAL_64]}.make_empty, 1, 4)
 			l_y_train [1] := <<0.0>>  -- 0 XOR 0 = 0
 			l_y_train [2] := <<1.0>>  -- 0 XOR 1 = 1
 			l_y_train [3] := <<1.0>>  -- 1 XOR 0 = 1
@@ -112,13 +112,13 @@ feature -- Tests
 			l_network.compile (0.1)
 
 			-- XOR data
-			create l_x_train.make (1, 4)
+			create l_x_train.make_filled (create {ARRAY [REAL_64]}.make_empty, 1, 4)
 			l_x_train [1] := <<0.0, 0.0>>
 			l_x_train [2] := <<0.0, 1.0>>
 			l_x_train [3] := <<1.0, 0.0>>
 			l_x_train [4] := <<1.0, 1.0>>
 
-			create l_y_train.make (1, 4)
+			create l_y_train.make_filled (create {ARRAY [REAL_64]}.make_empty, 1, 4)
 			l_y_train [1] := <<0.0>>
 			l_y_train [2] := <<1.0>>
 			l_y_train [3] := <<1.0>>

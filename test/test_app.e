@@ -61,14 +61,20 @@ feature {NONE} -- Test Runners
 feature {NONE} -- Test Execution
 
 	run_test (a_test: PROCEDURE; a_name: STRING)
-			-- Execute a single test.
+			-- Execute a single test; a contract violation counts as a failure, not a crash.
+		local
+			l_retried: BOOLEAN
 		do
-			a_test.call ([])
-			print ("  PASS: " + a_name + "%N")
-			passed := passed + 1
+			if not l_retried then
+				a_test.call ([])
+				print ("  PASS: " + a_name + "%N")
+				passed := passed + 1
+			end
 		rescue
 			print ("  FAIL: " + a_name + " (exception)%N")
 			failed := failed + 1
+			l_retried := True
+			retry
 		end
 
 feature {NONE} -- State
